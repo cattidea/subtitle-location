@@ -2,5 +2,8 @@
   "img_dir": "data/images",
   "label_path": "data/labels.csv",
   "test_img_dir": "data/test_images",
-  "h5_path": "data/data_set.h5"
+  "h5_path": "data/data_set.h5",
+  "model_dir": "data/ckpt/",
+  "model_meta": "data/ckpt/model.ckpt.meta",
+  "model_path": "data/ckpt/model.ckpt"
 }

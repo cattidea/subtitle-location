@@ -4,8 +4,14 @@ import numpy as np
 import tensorflow as tf
 
 from utils.data import data_import, ramdom_divide_data_set, H as IH, W as IW, C as IC, SEED, test_data_import, plot_with_label
+from utils.config import Config
 
-def train():
+CONFIG = Config()
+MODEL_PATH = CONFIG['model_path']
+MODEL_DIR = CONFIG['model_dir']
+MODEL_META = CONFIG['model_meta']
+
+def train(resume=False):
     """ 训练 """
     data_set = data_import()
     train_data_set, dev_data_set = ramdom_divide_data_set(data_set, train_proportion=0.95)
@@ -20,8 +26,10 @@ def train():
     GPU = True
     mini_batch_size = 64
     test_step = 1
+    save_step = 10
     test_plot = True
-    model = model_v4
+    max_to_keep = 5
+    model = model_v5
     k = np.array([1, 1, 4, 1, 2])
 
     # GPU Config
@@ -38,24 +46,42 @@ def train():
     with graph.as_default():
         # 训练计算图
         tf.set_random_seed(SEED)
-        X = tf.placeholder(dtype=tf.float32, shape=[None, IH, IW, IC], name="X")
-        Y = tf.placeholder(dtype=tf.float32, shape=[None, 5], name="Y")
-        keep_prob = tf.placeholder(dtype=tf.float32, name="keep_prob")
-        is_training = tf.placeholder(dtype=tf.bool, name="is_training")
-        Y_= model(X, keep_prob, is_training)
-        # loss = tf.reduce_sum(
-        #     Y[:, 0] * tf.reduce_sum(tf.square(k * tf.subtract(Y, Y_)), axis=-1) + \
-        #     (1 - Y[:, 0]) * tf.square(tf.subtract(Y[:, 0], Y_[:, 0]))
-        #     )
-        loss = tf.reduce_sum(
-            Y[:, 0] * (k[0] * -Y[:, 0] * tf.log(Y_[:, 0]) + tf.reduce_sum(tf.square(k[1: ] * tf.subtract(Y[:, 1:], Y_[:, 1:])), axis=-1)) + \
-            (1 - Y[:, 0]) * (k[0] * -Y[:, 0] * tf.log(Y_[:, 0]))
-            )
-        optimizer = tf.train.AdamOptimizer(learning_rate)
-        train_op = optimizer.minimize(loss)
+        if resume:
+            saver = tf.train.import_meta_graph(MODEL_META)
+            X, Y, keep_prob, is_training, Y_, loss, train_op = tf.get_collection("train")
+        else:
+            X = tf.placeholder(dtype=tf.float32, shape=[None, IH, IW, IC], name="X")
+            Y = tf.placeholder(dtype=tf.float32, shape=[None, 5], name="Y")
+            keep_prob = tf.placeholder(dtype=tf.float32, name="keep_prob")
+            is_training = tf.placeholder(dtype=tf.bool, name="is_training")
+            Y_= model(X, keep_prob, is_training)
+            # loss = tf.reduce_sum(
+            #     Y[:, 0] * tf.reduce_sum(tf.square(k * tf.subtract(Y, Y_)), axis=-1) + \
+            #     (1 - Y[:, 0]) * tf.square(tf.subtract(Y[:, 0], Y_[:, 0]))
+            #     )
+            loss = tf.reduce_sum(
+                Y[:, 0] * (k[0] * -Y[:, 0] * tf.log(Y_[:, 0]) + tf.reduce_sum(tf.square(k[1: ] * tf.subtract(Y[:, 1:], Y_[:, 1:])), axis=-1)) + \
+                (1 - Y[:, 0]) * (k[0] * -Y[:, 0] * tf.log(Y_[:, 0]))
+                )
+            optimizer = tf.train.AdamOptimizer(learning_rate)
+            train_op = optimizer.minimize(loss)
+
+            tf.add_to_collection("train", X)
+            tf.add_to_collection("train", Y)
+            tf.add_to_collection("train", keep_prob)
+            tf.add_to_collection("train", is_training)
+            tf.add_to_collection("train", Y_)
+            tf.add_to_collection("train", loss)
+            tf.add_to_collection("train", train_op)
+
 
         with tf.Session(graph=graph, config=config) as sess:
-            sess.run(tf.global_variables_initializer())
+            if resume:
+                saver.restore(sess, tf.train.latest_checkpoint(MODEL_DIR))
+                print("成功恢复模型")
+            else:
+                saver = tf.train.Saver(max_to_keep=max_to_keep)
+                sess.run(tf.global_variables_initializer())
             for epoch in range(1, num_epochs+1):
                 # train
                 train_costs = []
@@ -84,6 +110,10 @@ def train():
                     dev_cost /= dev_size
                     log_str += "dev cost is {}".format(dev_cost)
                 print(log_str)
+
+                # save model
+                if epoch % save_step == 0:
+                    saver.save(sess, MODEL_PATH)
 
             if test_plot:
                 encodings = sess.run(Y_, feed_dict={
@@ -233,16 +263,16 @@ def model_v3(X, keep_prob, is_training):
     A5 = tf.layers.dense(inputs=A4, units=2048, name="FC1")
     if keep_prob != 1:
         A5 = tf.nn.dropout(A5, keep_prob)
-    # A6 = tf.nn.relu(A6)
-    A5 = maxout(A5, 512)
+    A5 = tf.nn.relu(A5)
+    # A5 = maxout(A5, 512)
     print("A5: {}".format(A5.shape))
 
     # FC L2
     A6 = tf.layers.dense(inputs=A5, units=512, name="FC2")
     if keep_prob != 1:
         A6 = tf.nn.dropout(A6, keep_prob)
-    # A6 = tf.nn.relu(A6)
-    A6 = maxout(A6, 128)
+    A6 = tf.nn.relu(A6)
+    # A6 = maxout(A6, 128)
     print("A6: {}".format(A6.shape))
 
     # FC L3
@@ -312,6 +342,96 @@ def model_v4(X, keep_prob, is_training):
     return Y
 
 
+def model_v5(X, keep_prob, is_training):
+    """ CNN model """
+    A0 = X
+    print("A0: {}".format(A0.shape))
+
+    # CONV1
+    A1 = tf.layers.conv2d(inputs=A0, filters=8, kernel_size=3, strides=1, padding='same',
+                           kernel_initializer=tf.truncated_normal_initializer(stddev=0.1), name="CONV1_1")
+    # A1 = tf.layers.batch_normalization(inputs=A1, training=is_training, name="BN1_1")
+    A1 = tf.nn.relu(A1)
+
+    A1 = tf.layers.conv2d(inputs=A1, filters=16, kernel_size=3, strides=1, padding='same',
+                           kernel_initializer=tf.truncated_normal_initializer(stddev=0.1), name="CONV1_2")
+    # A1 = tf.layers.batch_normalization(inputs=A1, training=is_training, name="BN1_2")
+    A1 = tf.nn.relu(A1)
+
+    A1 = tf.layers.conv2d(inputs=A1, filters=32, kernel_size=3, strides=1, padding='same',
+                           kernel_initializer=tf.truncated_normal_initializer(stddev=0.1), name="CONV1_3")
+    # A1 = tf.layers.batch_normalization(inputs=A1, training=is_training, name="BN1_3")
+    A1 = tf.nn.relu(A1)
+    A1 = tf.layers.max_pooling2d(A1, pool_size=2, strides=2)
+    print("A1: {}".format(A1.shape))
+
+    # CONV2
+    A2 = tf.layers.conv2d(inputs=A1, filters=32, kernel_size=3, strides=1, padding='same',
+                           kernel_initializer=tf.truncated_normal_initializer(stddev=0.1), name="CONV2_1")
+    # A2 = tf.layers.batch_normalization(inputs=A2, training=is_training, name="BN2_1")
+    A2 = tf.nn.relu(A2)
+
+    A2 = tf.layers.conv2d(inputs=A2, filters=32, kernel_size=3, strides=1, padding='same',
+                           kernel_initializer=tf.truncated_normal_initializer(stddev=0.1), name="CONV2_2")
+    # A2 = tf.layers.batch_normalization(inputs=A2, training=is_training, name="BN2_2")
+    A2 = tf.nn.relu(A2)
+
+    A2 = tf.layers.conv2d(inputs=A2, filters=32, kernel_size=3, strides=1, padding='same',
+                           kernel_initializer=tf.truncated_normal_initializer(stddev=0.1), name="CONV2_3")
+    # A2 = tf.layers.batch_normalization(inputs=A2, training=is_training, name="BN2_3")
+    A2 = tf.nn.relu(A2)
+    A2 = tf.layers.max_pooling2d(A2, pool_size=2, strides=2)
+    print("A2: {}".format(A2.shape))
+
+    # CONV3
+    A3 = tf.layers.conv2d(inputs=A2, filters=32, kernel_size=3, strides=1, padding='same',
+                           kernel_initializer=tf.truncated_normal_initializer(stddev=0.1), name="CONV3_1")
+    # A3 = tf.layers.batch_normalization(inputs=A3, training=is_training, name="BN3_1")
+    A3 = tf.nn.relu(A3)
+
+    A3 = tf.layers.conv2d(inputs=A3, filters=32, kernel_size=3, strides=1, padding='same',
+                           kernel_initializer=tf.truncated_normal_initializer(stddev=0.1), name="CONV3_2")
+    # A3 = tf.layers.batch_normalization(inputs=A3, training=is_training, name="BN3_2")
+    A3 = tf.nn.relu(A3)
+
+    A3 = tf.layers.conv2d(inputs=A3, filters=32, kernel_size=3, strides=1, padding='same',
+                           kernel_initializer=tf.truncated_normal_initializer(stddev=0.1), name="CONV3_3")
+    # A3 = tf.layers.batch_normalization(inputs=A3, training=is_training, name="BN3_3")
+    A3 = tf.nn.relu(A3)
+    A3 = tf.layers.max_pooling2d(A3, pool_size=2, strides=2)
+    print("A3: {}".format(A3.shape))
+
+    # FLATTEN
+    A4 = tf.layers.flatten(A3)
+    print("A4: {}".format(A4.shape))
+
+    # FC L1
+    A5 = tf.layers.dense(inputs=A4, units=2048, name="FC1")
+    if keep_prob != 1:
+        A5 = tf.nn.dropout(A5, keep_prob)
+    A5 = tf.nn.relu(A5)
+    # A5 = maxout(A5, 512)
+    print("A5: {}".format(A5.shape))
+
+    # FC L2
+    A6 = tf.layers.dense(inputs=A5, units=512, name="FC2")
+    if keep_prob != 1:
+        A6 = tf.nn.dropout(A6, keep_prob)
+    A6 = tf.nn.relu(A6)
+    # A6 = maxout(A6, 128)
+    print("A6: {}".format(A6.shape))
+
+    # FC L3
+    A7 = tf.layers.dense(inputs=A6, units=5, name="FC3")
+    if keep_prob != 1:
+        A7 = tf.nn.dropout(A7, keep_prob)
+    A7 = tf.nn.sigmoid(A7)
+    print("A7: {}".format(A7.shape))
+
+    Y = A7
+    return Y
+
+
 def random_mini_batches(data_set, mini_batch_size=64, seed=0):
     """ 随机切分训练集为 mini_batch """
     np.random.seed(seed)
@@ -348,7 +468,6 @@ def inception_v2(input, filters, scope, is_training):
     """
     assert filters % 32 == 0
     k = filters // 32
-    input = tf.layers.batch_normalization(inputs=input, training=is_training, name=scope+"_BN", reuse=tf.AUTO_REUSE)
     res_1_1 = tf.layers.conv2d(inputs=input, filters=8*k, kernel_size=1, strides=1, padding='same',
                             kernel_initializer=tf.truncated_normal_initializer(stddev=0.1), name=scope+"_1_1", reuse=tf.AUTO_REUSE)
     res_1_1_t3 = tf.layers.conv2d(inputs=input, filters=12*k, kernel_size=1, strides=1, padding='same',
@@ -365,5 +484,6 @@ def inception_v2(input, filters, scope, is_training):
     res_pool = tf.layers.conv2d(inputs=res_pool_t, filters=4*k, kernel_size=1, strides=1, padding='same',
                             kernel_initializer=tf.truncated_normal_initializer(stddev=0.1), name=scope+"_pool", reuse=tf.AUTO_REUSE)
     res = tf.concat([res_1_1, res_3_3, res_5_5, res_pool], axis=-1)
+    res = tf.layers.batch_normalization(inputs=res, training=is_training, name=scope+"_BN", reuse=tf.AUTO_REUSE)
     res = tf.nn.relu(res)
     return res
