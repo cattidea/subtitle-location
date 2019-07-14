@@ -29,7 +29,7 @@ def train(resume=False):
     save_step = 10
     test_plot = True
     max_to_keep = 5
-    model = model_v5
+    model = model_v4
     k = np.array([1, 1, 4, 1, 2])
 
     # GPU Config
