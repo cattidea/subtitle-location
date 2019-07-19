@@ -9,7 +9,7 @@ from utils.config import Config
 
 W = 96
 H = 96
-C = 1
+C = 3
 
 CONFIG = Config()
 IMG_DIR = CONFIG["img_dir"]
