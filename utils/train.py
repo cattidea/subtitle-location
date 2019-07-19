@@ -2,8 +2,9 @@ import os
 import time
 import numpy as np
 import tensorflow as tf
+from PIL import Image
 
-from utils.data import data_import, ramdom_divide_data_set, H as IH, W as IW, C as IC, SEED, test_data_import, plot_with_label
+from utils.data import data_import, ramdom_divide_data_set, H as IH, W as IW, C as IC, SEED, test_data_import, plot_with_label,crop_with_label,save_with_label
 from utils.config import Config
 
 CONFIG = Config()
@@ -22,7 +23,7 @@ def train(resume=False):
     print("训练集数据 {} 条，开发集数据 {} 条，测试集数据 {} 条".format(train_size, dev_size, test_size))
 
     learning_rate = 0.0001
-    num_epochs = 100
+    num_epochs = 1
     GPU = True
     mini_batch_size = 64
     test_step = 1
@@ -89,7 +90,7 @@ def train(resume=False):
                     _, temp_cost = sess.run([train_op, loss], feed_dict={
                         X: mini_batch_X,
                         Y: mini_batch_Y,
-                        keep_prob: 0.5,
+                        keep_prob: 0.9,
                         is_training: True
                     })
                     print("{} mini-batch >> cost: {} ".format(epoch, temp_cost / mini_batch_size), end="\r")
@@ -125,7 +126,7 @@ def train(resume=False):
                     img_path = test_data_set["img_paths"][i]
                     label = encodings[i]
                     print(label)
-                    plot_with_label(img_path, label)
+                    crop_with_label(img_path, label)
 
 
 def model_v1(X, keep_prob, is_training):

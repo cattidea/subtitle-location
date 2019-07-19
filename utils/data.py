@@ -3,7 +3,7 @@ import random
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
-
+from PIL import Image
 from cv2 import cv2
 from utils.config import Config
 
@@ -48,8 +48,32 @@ def plot_with_label(img_path, label):
         pt2 = (int((cx+rw/2)*w), int((cy+rh/2)*h))
         img_arr = cv2.rectangle(img_arr, pt1, pt2, (0,0,255), 3)
     plt.imshow(img_arr)
+    cv2.imwrite(r'C:\Users\Administrator\Desktop\out\out\_'+'.jpg',img_arr)
+    print("1")
     plt.show()
-
+def save_with_label(img_path, label):
+    img_path = os.path.normpath(img_path)
+    img_arr = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
+    has_danmaku, cx, cy, rh, rw = label
+    if has_danmaku > 0.5:
+        h, w, _ = img_arr.shape
+        pt1 = (int((cx-rw/2)*w), int((cy-rh/2)*h))
+        pt2 = (int((cx+rw/2)*w), int((cy+rh/2)*h))
+        img_arr = cv2.rectangle(img_arr, pt1, pt2, (0,0,255), 3)
+    plt.imshow(img_arr)
+    cv2.imwrite(r'C:\Users\Administrator\Desktop\out\out\_'+'.jpg',img_arr)
+    print("1")
+def crop_with_label(img_path, label):
+    img_path = os.path.normpath(img_path)
+    im = Image.open(img_path)
+    img_arr = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
+    has_danmaku, cx, cy, rh, rw = label
+    if has_danmaku > 0.5:
+        h, w, _ = img_arr.shape
+        pt1 = (int((cx-rw/2)*w), int((cy-rh/2)*h))
+        pt2 = (int((cx+rw/2)*w), int((cy+rh/2)*h))
+        im=im.crop((int((cx-rw/2)*w), int((cy-rh/2)*h),int((cx+rw/2)*w),int((cy+rh/2)*h)))
+        im.save(r'C:\Users\Administrator\Desktop\out\out\crop_test1.jpeg')
 def read_labels():
     """ 读取标签数据 """
     labels = {}
