@@ -4,7 +4,8 @@ import numpy as np
 import tensorflow as tf
 from PIL import Image
 
-from utils.data import data_import, ramdom_divide_data_set, H as IH, W as IW, C as IC, SEED, test_data_import, plot_with_label,crop_with_label,save_with_label
+from utils.data import data_import, ramdom_divide_data_set, H as IH, W as IW, C as IC, \
+                       SEED, test_data_import, img_plot, img_add_label
 from utils.config import Config
 
 CONFIG = Config()
@@ -22,13 +23,13 @@ def train(resume=False):
     test_size = len(test_data_set["X"])
     print("训练集数据 {} 条，开发集数据 {} 条，测试集数据 {} 条".format(train_size, dev_size, test_size))
 
-    num_epochs = 1000
+    num_epochs = 1
     mini_batch_size = 64
     learning_rate = 0.0001
     keep_prob = 0.97
     GPU = True
 
-    test_step = 1
+    dev_step = 1
     save_step = 10
     test_plot = True
     max_to_keep = 5
@@ -107,7 +108,7 @@ def train(resume=False):
                 log_str = "{}/{} {} train cost is {} ".format(
                     epoch, num_epochs, time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), train_cost)
 
-                if epoch % test_step == 0:
+                if epoch % dev_step == 0:
                     # dev
                     dev_cost = sess.run(loss, feed_dict={
                         X: dev_data_set["X"],
@@ -126,14 +127,14 @@ def train(resume=False):
             if test_plot:
                 encodings = sess.run(Y_, feed_dict={
                         X: test_data_set["X"],
-                        keep_prob: 1,
+                        keep_prob_op: 1,
                         is_training: False
                     })
                 for i in range(test_size):
                     img_path = test_data_set["img_paths"][i]
                     label = encodings[i]
                     print(label)
-                    crop_with_label(img_path, label)
+                    img_plot(img_add_label(img_path, label), shape=None)
 
 
 def model_v1(X, keep_prob, is_training):

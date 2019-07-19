@@ -30,15 +30,23 @@ def image2array(img_path):
     img_arr = cv2.resize(img_arr, (W, H)).reshape((H, W, C))
     return img_arr
 
-def plot(img_array, shape=(H, W, C)):
+def img_plot(img_array, shape=(H, W, C)):
     """ 显示处理过的图片 array """
-    if C == 1:
-        plt.imshow(np.reshape(img_array, shape[: 2]), cmap='gray')
-    else:
-        plt.imshow(np.reshape(img_array, shape))
+    if shape:
+        if shape[-1] == 1:
+            img_array = np.reshape(img_array, shape[: 2])
+        else:
+            img_array = np.reshape(img_array, shape)
+    cmap = 'gray' if shape and shape[-1] == 1 else None
+    plt.imshow(img_array, cmap=cmap)
     plt.show()
 
-def plot_with_label(img_path, label):
+def img_save(img_array, file_path):
+    """ 保存图片 array """
+    cv2.imwrite(file_path, img_array)
+
+def img_add_label(img_path, label):
+    """ 根据 label 将图片的目标区域圈出来 """
     img_path = os.path.normpath(img_path)
     img_arr = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
     has_danmaku, cx, cy, rh, rw = label
@@ -47,33 +55,22 @@ def plot_with_label(img_path, label):
         pt1 = (int((cx-rw/2)*w), int((cy-rh/2)*h))
         pt2 = (int((cx+rw/2)*w), int((cy+rh/2)*h))
         img_arr = cv2.rectangle(img_arr, pt1, pt2, (0,0,255), 3)
-    plt.imshow(img_arr)
-    cv2.imwrite(r'C:\Users\Administrator\Desktop\out\out\_'+'.jpg',img_arr)
-    print("1")
-    plt.show()
-def save_with_label(img_path, label):
+    return img_arr
+
+def img_crop_by_label(img_path, label):
+    """ 根据 label 将图片的目标区域切分出来 """
     img_path = os.path.normpath(img_path)
     img_arr = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
     has_danmaku, cx, cy, rh, rw = label
     if has_danmaku > 0.5:
         h, w, _ = img_arr.shape
-        pt1 = (int((cx-rw/2)*w), int((cy-rh/2)*h))
-        pt2 = (int((cx+rw/2)*w), int((cy+rh/2)*h))
-        img_arr = cv2.rectangle(img_arr, pt1, pt2, (0,0,255), 3)
-    plt.imshow(img_arr)
-    cv2.imwrite(r'C:\Users\Administrator\Desktop\out\out\_'+'.jpg',img_arr)
-    print("1")
-def crop_with_label(img_path, label):
-    img_path = os.path.normpath(img_path)
-    im = Image.open(img_path)
-    img_arr = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
-    has_danmaku, cx, cy, rh, rw = label
-    if has_danmaku > 0.5:
-        h, w, _ = img_arr.shape
-        pt1 = (int((cx-rw/2)*w), int((cy-rh/2)*h))
-        pt2 = (int((cx+rw/2)*w), int((cy+rh/2)*h))
-        im=im.crop((int((cx-rw/2)*w), int((cy-rh/2)*h),int((cx+rw/2)*w),int((cy+rh/2)*h)))
-        im.save(r'C:\Users\Administrator\Desktop\out\out\crop_test1.jpeg')
+        start_x, start_y = int((cx-rw/2)*w), int((cy-rh/2)*h)
+        end_x, end_y = int((cx+rw/2)*w), int((cy+rh/2)*h)
+        crop_area = img_arr[start_y: end_y, start_x: end_x]
+        return crop_area
+    else:
+        return None
+
 def read_labels():
     """ 读取标签数据 """
     labels = {}
@@ -138,10 +135,10 @@ def data_import():
         print("发现处理好的数据文件，正在读取...")
     return data_set
 
-def test_data_import():
+def test_data_import(test_img_dir=TEST_IMG_DIR):
     """ 导入测试数据 """
     test_data_set = {}
-    img_names = os.listdir(TEST_IMG_DIR)
+    img_names = os.listdir(test_img_dir)
     X, img_paths = [], []
     for i, img_name in enumerate(img_names):
         print("get test data set {}/{} ".format(i, len(img_names)), end='\r')
@@ -152,3 +149,23 @@ def test_data_import():
     test_data_set["X"] = np.array(X, dtype=np.float64)
     test_data_set["img_paths"] = img_paths
     return test_data_set
+
+def video_divide(video_path, pics_dir):
+    """ 暂时未完善 """
+    return
+    vc = cv2.VideoCapture(video_path)
+    video_path = os.path.normpath(video_path)
+    c=1
+    if vc.isOpened():
+        rval,frame=vc.read()
+    else:
+        rval=False
+    while rval:
+        rval,frame=vc.read()
+        cv2.imwrite(r'C:\Users\Administrator\Desktop\test_picture\ab\ab\ab\1keyframe_'+str(c)+'.jpg',frame)
+        c=c+1
+        cv2.waitKey(1)
+    vc.release()
+
+def pics_into_video(video_path, pics_dir):
+    return
