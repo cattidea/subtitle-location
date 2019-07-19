@@ -2,8 +2,9 @@ import os
 import time
 import numpy as np
 import tensorflow as tf
+from PIL import Image
 
-from utils.data import data_import, ramdom_divide_data_set, H as IH, W as IW, C as IC, SEED, test_data_import, plot_with_label
+from utils.data import data_import, ramdom_divide_data_set, H as IH, W as IW, C as IC, SEED, test_data_import, plot_with_label,crop_with_label,save_with_label
 from utils.config import Config
 
 CONFIG = Config()
@@ -132,7 +133,7 @@ def train(resume=False):
                     img_path = test_data_set["img_paths"][i]
                     label = encodings[i]
                     print(label)
-                    plot_with_label(img_path, label)
+                    crop_with_label(img_path, label)
 
 
 def model_v1(X, keep_prob, is_training):
