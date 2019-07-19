@@ -26,7 +26,7 @@ def train(resume=False):
     learning_rate = 0.0001
     keep_prob = 0.97
     GPU = True
-    
+
     test_step = 1
     save_step = 10
     test_plot = True
