@@ -169,6 +169,7 @@ def video_split(video_path, pics_dir):
         if not rval:
             break
         print("video split {:6d} ".format(idx), end="\r")
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         cv2.imwrite(os.path.join(pics_dir, "{:06d}.jpg".format(idx)), frame)
         idx += 1
         cv2.waitKey(1)
@@ -176,7 +177,6 @@ def video_split(video_path, pics_dir):
 
 def pics_merge_into_video(video_path, pics_dir):
     """ 将图片合并为视频 """
-
     img_names = os.listdir(pics_dir)
     shape = cv2.imread(os.path.join(pics_dir, img_names[0])).shape
     size = (shape[1], shape[0])
@@ -185,7 +185,7 @@ def pics_merge_into_video(video_path, pics_dir):
     video = cv2.VideoWriter(video_path, fourcc, fps, size)
 
     for i, img_name in enumerate(img_names):
-        print("merge {}/{} ".format(i, len(img_names)))
+        print("merge {}/{} ".format(i, len(img_names)), end='\r')
         if img_name.endswith('.jpg'):
             img_path = os.path.join(pics_dir, img_name)
             img = cv2.imread(img_path)
