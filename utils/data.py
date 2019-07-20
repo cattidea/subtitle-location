@@ -1,6 +1,7 @@
 import os
 import random
 import h5py
+import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
@@ -135,37 +136,59 @@ def data_import():
         print("发现处理好的数据文件，正在读取...")
     return data_set
 
-def test_data_import(test_img_dir=TEST_IMG_DIR):
+def test_data_import(test_img_dir=TEST_IMG_DIR, cache=None):
     """ 导入测试数据 """
-    test_data_set = {}
-    img_names = os.listdir(test_img_dir)
-    X, img_paths = [], []
-    for i, img_name in enumerate(img_names):
-        print("get test data set {}/{} ".format(i, len(img_names)), end='\r')
-        img_path = os.path.join(TEST_IMG_DIR, img_name)
-        img_arr = image2array(img_path) / 255
-        X.append(img_arr)
-        img_paths.append(img_path)
-    test_data_set["X"] = np.array(X, dtype=np.float64)
-    test_data_set["img_paths"] = img_paths
+    if cache and os.path.exists(cache):
+        with open(cache, 'rb') as f:
+            test_data_set = pickle.load(f)
+    else:
+        test_data_set = {}
+        img_names = os.listdir(test_img_dir)
+        X, img_paths = [], []
+        for i, img_name in enumerate(img_names):
+            print("get test data set {}/{} ".format(i, len(img_names)), end='\r')
+            img_path = os.path.join(test_img_dir, img_name)
+            img_arr = image2array(img_path) / 255
+            X.append(img_arr)
+            img_paths.append(img_path)
+        test_data_set["X"] = np.array(X, dtype=np.float64)
+        test_data_set["img_paths"] = img_paths
+        if cache:
+            with open(cache, 'wb') as f:
+                pickle.dump(test_data_set, f)
     return test_data_set
 
-def video_divide(video_path, pics_dir):
-    """ 暂时未完善 """
-    return
+def video_split(video_path, pics_dir):
+    """ 将视频切分为图片 """
     vc = cv2.VideoCapture(video_path)
     video_path = os.path.normpath(video_path)
-    c=1
-    if vc.isOpened():
-        rval,frame=vc.read()
-    else:
-        rval=False
+    idx = 0
+    rval = vc.isOpened()
     while rval:
-        rval,frame=vc.read()
-        cv2.imwrite(r'C:\Users\Administrator\Desktop\test_picture\ab\ab\ab\1keyframe_'+str(c)+'.jpg',frame)
-        c=c+1
+        rval, frame = vc.read()
+        if not rval:
+            break
+        print("video split {:6d} ".format(idx), end="\r")
+        cv2.imwrite(os.path.join(pics_dir, "{:06d}.jpg".format(idx)), frame)
+        idx += 1
         cv2.waitKey(1)
     vc.release()
 
-def pics_into_video(video_path, pics_dir):
-    return
+def pics_merge_into_video(video_path, pics_dir):
+    """ 将图片合并为视频 """
+
+    img_names = os.listdir(pics_dir)
+    shape = cv2.imread(os.path.join(pics_dir, img_names[0])).shape
+    size = (shape[1], shape[0])
+    fps = 24
+    fourcc = cv2.VideoWriter_fourcc('D', 'I', 'V', 'X')
+    video = cv2.VideoWriter(video_path, fourcc, fps, size)
+
+    for i, img_name in enumerate(img_names):
+        print("merge {}/{} ".format(i, len(img_names)))
+        if img_name.endswith('.jpg'):
+            img_path = os.path.join(pics_dir, img_name)
+            img = cv2.imread(img_path)
+            video.write(img)
+    video.release()
+

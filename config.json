@@ -6,5 +6,10 @@
   "model_dir": "data/ckpt/",
   "model_meta": "data/ckpt/model.ckpt.meta",
   "model_path": "data/ckpt/model.ckpt",
-  "test_video": "data/test_data/test_video.mp4"
+  "test_video_imgs_dir": "data/test_data/test_video_imgs/",
+  "test_video": "data/test_data/test_video.mp4",
+  "crop_imgs_dir": "data/test_data/crop_imgs/",
+  "label_imgs_dir": "data/test_data/label_imgs/",
+  "test_cache": "data/test_data/cache",
+  "test_out_video": "data/test_data/test_out_video.mp4"
 }
