@@ -8,7 +8,7 @@ from utils.data import SEED
 from utils.data import C as IC
 from utils.data import H as IH
 from utils.data import W as IW
-from utils.data import (img_add_label, img_crop_by_label, img_save,
+from utils.data import (img_add_label, img_crop_by_label, img_save, img_plot,
                         pics_merge_into_video, test_data_import, video_split)
 
 CONFIG = Config()
@@ -69,7 +69,9 @@ def test(use_cache=False):
                 label_img_path = os.path.join(LABEL_IMGS_DIR, img_name)
 
                 label = encodings[i]
-                img_save(img_crop_by_label(img_path, label), crop_img_path)
+                crop_area = img_crop_by_label(img_path, label)
+                if crop_area is not None:
+                    img_save(crop_area, crop_img_path)
                 img_save(img_add_label(img_path, label), label_img_path)
 
             pics_merge_into_video(TEST_OUT_VIDEO, LABEL_IMGS_DIR)

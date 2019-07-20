@@ -44,6 +44,7 @@ def img_plot(img_array, shape=(H, W, C)):
 
 def img_save(img_array, file_path):
     """ 保存图片 array """
+    img_array = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
     cv2.imwrite(file_path, img_array)
 
 def img_add_label(img_path, label):
@@ -169,7 +170,6 @@ def video_split(video_path, pics_dir):
         if not rval:
             break
         print("video split {:6d} ".format(idx), end="\r")
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         cv2.imwrite(os.path.join(pics_dir, "{:06d}.jpg".format(idx)), frame)
         idx += 1
         cv2.waitKey(1)
