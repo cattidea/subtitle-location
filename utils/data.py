@@ -165,7 +165,7 @@ def subtitle_recognition(crop_imgs_dir):
     crop_img_names = os.listdir(crop_imgs_dir)
     subtitles = []
     subtitle_cur = ""
-    GAMMA = 0.7
+    GAMMA = 0.3
     for i, crop_img_name in enumerate(crop_img_names):
         print("recognition {}/{}".format(i, len(crop_img_names)), end="\r")
         crop_img_path = os.path.join(crop_imgs_dir, crop_img_name)
@@ -175,7 +175,7 @@ def subtitle_recognition(crop_imgs_dir):
             continue
         subtitle_set = set(subtitle)
         subtitle_cur_set = set(subtitle_cur)
-        if len(subtitle_set | subtitle_cur_set) > 0 and \
+        if subtitle and \
            len(subtitle_set & subtitle_cur_set) / len(subtitle_set | subtitle_cur_set) < GAMMA:
             subtitle_cur = subtitle
             subtitles.append(subtitle_cur)
