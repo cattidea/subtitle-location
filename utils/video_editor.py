@@ -52,8 +52,11 @@ class Frame:
 
 
 def rel_change(a, b):
-   x = (b - a) / max(a, b)
-   return x
+    if max(a, b) == 0:
+        x = 0
+    else:
+        x = (b - a) / max(a, b)
+    return x
 
 def _top_order(frames, keyframe_id_set, num_top_frames=50):
     frames.sort(key=operator.attrgetter("diff"), reverse=True)

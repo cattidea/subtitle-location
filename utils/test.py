@@ -82,4 +82,4 @@ def test(use_cache=False):
             subtitles = subtitle_recognition(CROP_IMGS_DIR)
             with open(SUBTITLES_TXT, "w", encoding="utf8") as f:
                 for subtitle in subtitles:
-                    f.write(subtitle)
+                    f.write(subtitle + '\n')
