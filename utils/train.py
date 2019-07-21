@@ -1,12 +1,17 @@
 import os
 import time
+
 import numpy as np
 import tensorflow as tf
 from PIL import Image
 
-from utils.data import data_import, ramdom_divide_data_set, H as IH, W as IW, C as IC, \
-                       SEED, test_data_import, img_plot, img_add_label
 from utils.config import Config
+from utils.data import SEED
+from utils.data import C as IC
+from utils.data import H as IH
+from utils.data import W as IW
+from utils.data import (data_import, img_add_label, img_plot,
+                        ramdom_divide_data_set, test_data_import)
 
 CONFIG = Config()
 MODEL_PATH = CONFIG['model_path']
@@ -23,10 +28,10 @@ def train(resume=False):
     test_size = len(test_data_set["X"])
     print("训练集数据 {} 条，开发集数据 {} 条，测试集数据 {} 条".format(train_size, dev_size, test_size))
 
-    num_epochs = 1
+    num_epochs = 10000
     mini_batch_size = 64
     learning_rate = 0.0001
-    keep_prob = 0.97
+    keep_prob = 0.965
     GPU = True
 
     dev_step = 1

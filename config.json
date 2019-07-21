@@ -11,5 +11,6 @@
   "crop_imgs_dir": "data/test_data/crop_imgs/",
   "label_imgs_dir": "data/test_data/label_imgs/",
   "test_cache": "data/test_data/cache",
-  "test_out_video": "data/test_data/test_out_video.mp4"
+  "test_out_video": "data/test_data/test_out_video.mp4",
+  "subtitles_txt": "data/test_data/subtitles.txt"
 }

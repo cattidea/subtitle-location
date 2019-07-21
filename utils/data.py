@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from cv2 import cv2
 from utils.config import Config
+from utils.ocr import baiduOCR
 
 W = 96
 H = 96
@@ -159,36 +160,20 @@ def test_data_import(test_img_dir=TEST_IMG_DIR, cache=None):
                 pickle.dump(test_data_set, f)
     return test_data_set
 
-def video_split(video_path, pics_dir):
-    """ 将视频切分为图片 """
-    vc = cv2.VideoCapture(video_path)
-    video_path = os.path.normpath(video_path)
-    idx = 0
-    rval = vc.isOpened()
-    while rval:
-        rval, frame = vc.read()
-        if not rval:
-            break
-        print("video split {:6d} ".format(idx), end="\r")
-        cv2.imwrite(os.path.join(pics_dir, "{:06d}.jpg".format(idx)), frame)
-        idx += 1
-        cv2.waitKey(1)
-    vc.release()
-
-def pics_merge_into_video(video_path, pics_dir):
-    """ 将图片合并为视频 """
-    img_names = os.listdir(pics_dir)
-    shape = cv2.imread(os.path.join(pics_dir, img_names[0])).shape
-    size = (shape[1], shape[0])
-    fps = 24
-    fourcc = cv2.VideoWriter_fourcc('D', 'I', 'V', 'X')
-    video = cv2.VideoWriter(video_path, fourcc, fps, size)
-
-    for i, img_name in enumerate(img_names):
-        print("merge {}/{} ".format(i, len(img_names)), end='\r')
-        if img_name.endswith('.jpg'):
-            img_path = os.path.join(pics_dir, img_name)
-            img = cv2.imread(img_path)
-            video.write(img)
-    video.release()
-
+def subtitle_recognition(crop_imgs_dir):
+    """ 识别字幕 """
+    crop_img_names = os.listdir(crop_imgs_dir)
+    subtitles = []
+    subtitle_cur = ""
+    GAMMA = 0.7
+    for i, crop_img_name in enumerate(crop_img_names):
+        print("recognition {}/{}".format(i, len(crop_img_names)), end="\r")
+        crop_img_path = os.path.join(crop_imgs_dir, crop_img_name)
+        subtitle = baiduOCR(crop_img_path)
+        subtitle_set = set(subtitle)
+        subtitle_cur_set = set(subtitle_cur)
+        if len(subtitle_set | subtitle_cur_set) > 0 and \
+           len(subtitle_set & subtitle_cur_set) / len(subtitle_set | subtitle_cur_set) < GAMMA:
+            subtitle_cur = subtitle
+            subtitles.append(subtitle_cur)
+    return subtitles
