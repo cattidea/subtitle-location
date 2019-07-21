@@ -169,7 +169,10 @@ def subtitle_recognition(crop_imgs_dir):
     for i, crop_img_name in enumerate(crop_img_names):
         print("recognition {}/{}".format(i, len(crop_img_names)), end="\r")
         crop_img_path = os.path.join(crop_imgs_dir, crop_img_name)
-        subtitle = baiduOCR(crop_img_path)
+        try:
+            subtitle = baiduOCR(crop_img_path)
+        except:
+            continue
         subtitle_set = set(subtitle)
         subtitle_cur_set = set(subtitle_cur)
         if len(subtitle_set | subtitle_cur_set) > 0 and \
