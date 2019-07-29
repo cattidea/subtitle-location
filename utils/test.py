@@ -24,8 +24,11 @@ TEST_CACHE = CONFIG['test_cache']
 TEST_OUT_VIDEO = CONFIG['test_out_video']
 SUBTITLES_TXT = CONFIG['subtitles_txt']
 
-def test(use_cache=False):
-    GPU = True
+def test(test_config):
+    use_cache = test_config["use_cache"]
+    recognition = test_config["recognition"]
+    GPU = test_config["use_GPU"]
+
     test_batch_step = 128
     keyframe_id_set = video_split(TEST_VIDEO, TEST_IMG_DIR, only_keyframes=False, compute_keyframe=THRESH)
     cache = TEST_CACHE if use_cache else None
@@ -79,7 +82,8 @@ def test(use_cache=False):
                 img_save(img_add_label(img_path, label), label_img_path)
 
             pics_merge_into_video(TEST_OUT_VIDEO, LABEL_IMGS_DIR)
-            subtitles = subtitle_recognition(CROP_IMGS_DIR)
-            with open(SUBTITLES_TXT, "w", encoding="utf8") as f:
-                for subtitle in subtitles:
-                    f.write(subtitle + '\n')
+            if recognition:
+                subtitles = subtitle_recognition(CROP_IMGS_DIR)
+                with open(SUBTITLES_TXT, "w", encoding="utf8") as f:
+                    for subtitle in subtitles:
+                        f.write(subtitle + '\n')

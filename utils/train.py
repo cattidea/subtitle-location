@@ -18,7 +18,7 @@ MODEL_PATH = CONFIG['model_path']
 MODEL_DIR = CONFIG['model_dir']
 MODEL_META = CONFIG['model_meta']
 
-def train(resume=False):
+def train(train_config):
     """ 训练 """
     data_set = data_import()
     train_data_set, dev_data_set = ramdom_divide_data_set(data_set, train_proportion=0.95)
@@ -32,7 +32,8 @@ def train(resume=False):
     mini_batch_size = 64
     learning_rate = 0.0001
     keep_prob = 0.965
-    GPU = True
+    GPU = train_config["use_GPU"]
+    resume = train_config["resume"]
 
     dev_step = 1
     save_step = 10
