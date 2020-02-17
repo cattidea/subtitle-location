@@ -138,3 +138,21 @@ dmypy.json
 # editor
 /.idea
 /.vscode
+
+[*.{frm,vbp,bas,cls}]
+indent_size = 3
+end_of_line = crlf
+
+[*.dat]
+end_of_line = crlf
+
+# vb
+MSSCCPRJ.SCC
+*.vbw
+*.log
+
+# pic_labeler
+/image_labeler/*.csv
+
+# compiled
+*.exe

@@ -16,3 +16,10 @@ indent_size = 4
 
 [*.md]
 indent_size = 3
+
+[*.{frm,vbp,bas,cls}]
+indent_size = 3
+end_of_line = crlf
+
+[*.dat]
+end_of_line = crlf
