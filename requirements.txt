@@ -1,5 +1,5 @@
 numpy==1.15.4
-Pillow==6.2.2
+Pillow==7.2.0
 tensorflow-gpu==2.0.1
 opencv-python==4.1.0
 baidu-aip==2.2.17
