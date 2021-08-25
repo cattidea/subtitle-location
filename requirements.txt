@@ -1,6 +1,6 @@
 numpy==1.15.4
 Pillow==8.2.0
-tensorflow-gpu==2.5.0
+tensorflow-gpu==2.5.1
 opencv-python==4.1.0
 baidu-aip==2.2.17
 matplotlib==3.0.2
